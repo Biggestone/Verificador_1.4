@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.example.renan.verificador.MainActivity">
+
+    <ImageView
+        android:id="@+id/imagem1"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:background="#e6e6e6"
+        android:layout_marginTop="5dp"
+        android:layout_gravity="center"
+        android:src="@mipmap/ic_launcher"/>
+    <GridLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:columnCount="3"
+        android:rowCount="1">
+        <Button
+            android:id="@+id/btEscolherFoto1"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:paddingTop="10dp"
+            android:text="Escolher Imagem"
+            android:textSize="10sp"
+            android:onClick="abrirDiretorio"
+            />
+
+        <Button
+            android:id="@+id/btTirarFoto1"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:paddingTop="10dp"
+            android:text="Tirar Foto"
+            android:textSize="10sp"
+            android:onClick="tirarFoto"
+            />
+    </GridLayout>
+
+
+    <ImageView
+        android:id="@+id/imagem2"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:background="#e6e6e6"
+        android:layout_marginTop="15dp"
+        android:layout_gravity="center"
+        android:src="@mipmap/ic_launcher"/>
+
+    <GridLayout
+        android:layout_gravity="center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:columnCount="2"
+        android:rowCount="1">
+
+        <Button
+            android:id="@+id/btEscolherFoto2"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:paddingTop="10dp"
+            android:text="Escolher imagem"
+            android:textSize="10sp"
+            android:onClick="abrirDiretorio"
+            />
+
+        <Button
+            android:id="@+id/bttirarFoto2"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:paddingTop="10dp"
+            android:text="Tirar foto"
+            android:textSize="10sp"
+            android:onClick="tirarFoto"
+            />
+
+    </GridLayout>
+
+
+    <GridLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:columnCount="3"
+        android:rowCount="1">
+        <TextView
+            android:id="@+id/result"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            />
+        <!--<TextView
+            android:id="@+id/txtPorcentagem"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingRight="10dp"
+            android:text="teste"/>
+        <TextView
+            android:id="@+id/txtConclusao"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/aprovado"
+            android:text="Pessoas Iguais"/>-->
+
+    </GridLayout>
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:rowCount="2"
+        android:columnCount="1">
+        <TextView
+            android:id="@+id/pathImagem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="path"/>
+        <Button
+            android:id="@+id/verificarFaces"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="verificar"
+            android:textSize="10sp"
+            android:onClick="verify"
+            />
+    </GridLayout>
+</LinearLayout>
