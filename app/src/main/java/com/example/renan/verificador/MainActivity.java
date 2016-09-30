@@ -7,6 +7,8 @@ import android.app.*;
 import android.content.*;
 import android.net.*;
 import android.os.*;
+import android.os.Process;
+import android.support.v4.app.FragmentActivity;
 import android.view.*;
 import android.graphics.*;
 import android.widget.*;
@@ -56,8 +58,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView textView;
     private Uri mUriPhotoTaken;
     private TextView txtpath;
-    final private int MY_RESQUEST_CAMERA =0;
+    final private int MY_RESQUEST_CAMERA =4;
     static final int REQUEST_IMAGE_CAPTURE = 2;
+    static final int REQUEST_WRITE = 3;
     private String MY_KEY_FOR_PHOTOS="123";
     final private int MY_CODE_OPEN_FOLDER =100;
     private int idDeViews;
@@ -67,7 +70,6 @@ public class MainActivity extends AppCompatActivity {
     private UUID mFaceId1;
     private int mIndex;//Index global que será enviado para identificação das faces
     private String myLocalFilePath;
-
     private final int PICK_IMAGE = 1;
     private ProgressDialog detectionProgressDialog;
     ProgressDialog progressDialog;
@@ -76,23 +78,17 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         imagem1 = (ImageView)findViewById(R.id.imagem1);
         imagem2 = (ImageView)findViewById(R.id.imagem2);
-        //textView = (TextView)findViewById(R.id.txtPorcentagem);
         txtpath = (TextView)findViewById(R.id.pathImagem);
-
-
+        idDeViews = 0;
         detectionProgressDialog = new ProgressDialog(this);
         progressDialog = new ProgressDialog(this);
-        //progressDialog.setTitle("Aguarde, por favor");
     }
 
 
-
-
     private class VerificationTask extends AsyncTask<Void, String, VerifyResult> {
-        // The IDs of two face to verify.
+        // Id das duas faces a serem verificadas
         private UUID mFaceId0;
         private UUID mFaceId1;
 
@@ -104,19 +100,18 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected VerifyResult doInBackground(Void... params) {
 
-            // Get an instance of face service client to detect faces in image.
+            // Pega uma instância do face service para o início da verificação
             FaceServiceClient faceServiceClient = new FaceServiceRestClient("635239d49d1f4f1dbf068ae4fa72949d");
 
             try{
                 publishProgress("Verificando...");
 
-                // Start verification.
+                // Inicia a verificação.
                 return faceServiceClient.verify(
                         mFaceId0,      /* The first face ID to verify */
                         mFaceId1);     /* The second face ID to verify */
             }  catch (Exception e) {
                 publishProgress(e.getMessage());
-                //addLog(e.getMessage());
                 return null;
             }
         }
@@ -124,7 +119,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             progressDialog.show();
-            //addLog("Request: Verifying face " + mFaceId0 + " and face " + mFaceId1);
         }
 
         @Override
@@ -135,68 +129,36 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(VerifyResult result) {
-            if (result != null) {
-
-                /*addLog("Response: Success. Face " + mFaceId0 + " and face "
-                        + mFaceId1 + (result.isIdentical ? " " : " don't ")
-                        + "belong to the same person");*/
-            }
-
-            // Show the result on screen when verification is done.
+            // Mosta o resultado da verificação
             setUiAfterVerification(result);
         }
     }
 
     private void setUiAfterVerification(VerifyResult result) {
-        // Verification is done, hide the progress dialog.
+        // Quando a verificação acaba, o progress dialog é finalizado.
         progressDialog.dismiss();
 
-        // Enable all the buttons.
-        //setAllButtonEnabledStatus(true);
-
-        // Show verification result.
+        // Mostra o resultado da verificação.
         if (result != null) {
             DecimalFormat formatter = new DecimalFormat("#0.00");
             String verificationResult = (result.isIdentical ? "Pessoas iguais": "Pessoas diferentes")
                     + ". A confidência é " + formatter.format(result.confidence);
             setInfo(verificationResult);
+        }else{
+            String connectionFailed = "A conexão com o serviço falhou. Tente novamente";
+            setInfo(connectionFailed);
         }
     }
-
-
 
     private void setInfo(String info) {
         TextView textView = (TextView) findViewById(R.id.result);
         textView.setText(info);
     }
 
-    private static Bitmap drawFaceRectanglesOnBitmap(Bitmap originalBitmap, Face[] faces) {
-        Bitmap bitmap = originalBitmap.copy(Bitmap.Config.ARGB_8888, true);
-        Canvas canvas = new Canvas(bitmap);
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setColor(Color.RED);
-        int stokeWidth = 2;
-        paint.setStrokeWidth(stokeWidth);
-        if (faces != null) {
-            for (Face face : faces) {
-                FaceRectangle faceRectangle = face.faceRectangle;
-                canvas.drawRect(
-                        faceRectangle.left,
-                        faceRectangle.top,
-                        faceRectangle.left + faceRectangle.width,
-                        faceRectangle.top + faceRectangle.height,
-                        paint);
-            }
-        }
-        return bitmap;
-    }
-
     // Detecta faces quando feito o upload de uma imagem
     // Enquadra faces depois de reconhecê-las
 
-    private void detectAndFrame(final Bitmap imageBitmap, int index)
+    private void detectAndFrame(final Bitmap imageBitmap, final int index)
     {
         final FaceServiceClient faceServiceClient =
                 new FaceServiceRestClient("635239d49d1f4f1dbf068ae4fa72949d");
@@ -211,7 +173,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     protected Face[] doInBackground(InputStream... params) {
                         try {
-                            publishProgress("Detectando...");
+                            publishProgress("Detectando faces...");
                             Face[] result = faceServiceClient.detect(
                                     params[0],
                                     true,         // returnFaceId
@@ -229,6 +191,7 @@ public class MainActivity extends AppCompatActivity {
                             return result;
                         } catch (Exception e) {
                             publishProgress("Ocorreu um erro durante o processo de identificação");
+
                             return null;
                         }
                     }
@@ -242,54 +205,49 @@ public class MainActivity extends AppCompatActivity {
                     }
                     @Override
                     protected void onPostExecute(Face[] result) {
+
                         if(mIndex==0){
-                            FacelistAdapter facelistAdapter0 = new FacelistAdapter(result,mIndex);
-                            int position = facelistAdapter0.getCount()-1;
-                            mFaceId0 = facelistAdapter0.faces.get(position).faceId;
-                            txtpath.setText(String.valueOf(String.valueOf(mFaceId0)));
+                            if(!(result==null)){
+                                FacelistAdapter facelistAdapter0 = new FacelistAdapter(result,mIndex);
+                                int position = facelistAdapter0.getCount()-1;
+                                mFaceId0 = facelistAdapter0.faces.get(position).faceId;
+                            }
                         }
                         else if(mIndex==1){
                             FacelistAdapter facelistAdapter1 = new FacelistAdapter(result,mIndex);
                             int position = facelistAdapter1.getCount()-1;
                             mFaceId1 = facelistAdapter1.faces.get(position).faceId;
-                            txtpath.setText(String.valueOf(String.valueOf(mFaceId1)));
                         }
                     }
                 };
         detectTask.execute(inputStream);
     }
 
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
         switch (requestCode) {
-            case MY_RESQUEST_CAMERA:
+            case REQUEST_IMAGE_CAPTURE:
             {
                 // Se o request for cancelado, o array fica vazio
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
                     iniciarCamera();
 
                 } else {
 
-
+                    return;
                 }
-                return;
+
             }
 
         }
     }
 
     //Métodos que são chamados quando os botões são clicados
-
     //1- Botão tirar foto
     public void tirarFoto(View view){
         idDeViews = view.getId();
         if(ActivityCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA)!= PackageManager.PERMISSION_GRANTED){
-
             pedirAcesso();
         }else{
             iniciarCamera();
@@ -303,11 +261,8 @@ public class MainActivity extends AppCompatActivity {
         intent.setType("*/*");
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         startActivityForResult(Intent.createChooser(intent,"Selecione um file manager"),MY_CODE_OPEN_FOLDER);
-
-
-
-
     }
+
     //Pede acesso se ele ainda não foi aceito
     private void pedirAcesso() {
 
@@ -316,31 +271,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void iniciarCamera(){
-
+        //metodo desativado temporariamente para continuação amanhã
+        /*Intent cameraIntent = new Intent(this,CameraActivity.class);
+        startActivity(cameraIntent);*/
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if(cameraIntent.resolveActivity(getPackageManager())!=null){
-            myLocalFilePath = getExternalFilesDir(null)+"/"+System.currentTimeMillis()+".jpg";
-            //mCurrentPhotoPath = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-
-            File file = null;
-            file = new File(myLocalFilePath);
-            //file = File.createTempFile("IMG_", ".jpg", mCurrentPhotoPath);
-            //file.getParentFile().mkdir();
+            myLocalFilePath = getExternalFilesDir(null)+"/"+System.currentTimeMillis()+".png";
+            File file = new File(myLocalFilePath);
             mUriPhotoTaken = Uri.fromFile(file);
-
             cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, mUriPhotoTaken);
             startActivityForResult(cameraIntent, MY_RESQUEST_CAMERA);
-
-
         }
-
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         Uri uriImagem = null;
-        String path = "";
-        BitmapFactory.Options options;
         if(requestCode==MY_CODE_OPEN_FOLDER && resultCode == RESULT_OK){
             uriImagem =data.getData();
             try {
@@ -354,50 +300,40 @@ public class MainActivity extends AppCompatActivity {
                 imagem1.setImageBitmap(bitmap);
                 mBitmap0 = bitmap;
                 detectAndFrame(bitmap,0);
-
             }else if(idDeViews==R.id.btEscolherFoto2){
                 imagem2.setImageBitmap(bitmap);
                 mBitmap1 = bitmap;
                 detectAndFrame(bitmap,1);
             }
-
         }
 
-        if(requestCode==MY_RESQUEST_CAMERA && resultCode == RESULT_OK){
-
-            Bitmap imagemFoto = BitmapFactory.decodeFile(myLocalFilePath);
-            Bitmap imagemFotoReduzida = Bitmap.createScaledBitmap(imagemFoto,288,512,true);
-
-
-            if(idDeViews==R.id.btTirarFoto1){
-                imagem1.setImageBitmap(imagemFotoReduzida);
-                //imagem1.setTag(myLocalFilePath);
-                mBitmap0 = imagemFoto;
-                detectAndFrame(imagemFoto,0);
+        try {
+            if(requestCode==MY_RESQUEST_CAMERA && resultCode == RESULT_OK){
+                Bitmap imagemFoto = BitmapFactory.decodeFile(myLocalFilePath);
+                Bitmap imagemFotoReduzida = Bitmap.createScaledBitmap(imagemFoto,144,256,true);
+                if(idDeViews==R.id.btTirarFoto1){
+                    imagem1.setImageBitmap(imagemFotoReduzida);
+                    mBitmap0 = imagemFoto;
+                    detectAndFrame(imagemFoto,0);
+                    idDeViews = 0;
+                }
+                else if(idDeViews==R.id.bttirarFoto2){
+                    imagem2.setImageBitmap(imagemFotoReduzida);
+                    mBitmap1 = imagemFoto;
+                    detectAndFrame(imagemFoto,1);
+                    idDeViews = 0;
+                }
             }
-            if(idDeViews==R.id.bttirarFoto2){
-                imagem2.setImageBitmap(imagemFotoReduzida);
-                //imagem2.setTag(myLocalFilePath);
-                mBitmap1 = imagemFoto;
-                detectAndFrame(imagemFoto,1);
-            }
-
+        }catch (Exception e){
+            Toast.makeText(getBaseContext(),"OOps, algo deu errado",Toast.LENGTH_LONG).show();
+            String log = e.toString();
+            Intent intent = new Intent(this,LogActiviyActivity.class);
+            intent.putExtra("log",log);
+            startActivity(intent);
         }
 
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
-        super.onSaveInstanceState(outState, outPersistentState);
 
     }
-
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-
-    }
-
 
     public void verify(View view) {
         new VerificationTask(mFaceId0, mFaceId1).execute();
